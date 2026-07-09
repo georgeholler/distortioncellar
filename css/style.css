@@ -1,0 +1,203 @@
+/* ==========================================================================
+   Distortion Cellar — theme stylesheet
+   Mobile-first. Restyle the whole site by editing the variables below.
+   ========================================================================== */
+
+:root {
+  /* --- Colors ------------------------------------------------------------ */
+  --color-bg:        #12100f;   /* page background            */
+  --color-surface:   #1d1a18;   /* cards / panels             */
+  --color-text:      #ece7e1;   /* body text                  */
+  --color-muted:     #a39c94;   /* secondary text             */
+  --color-accent:    #e0562d;   /* links, buttons, highlights */
+  --color-accent-2:  #f0a020;   /* secondary accent           */
+  --color-border:    #322d29;   /* hairlines                  */
+
+  /* --- Typography -------------------------------------------------------- */
+  --font-body:    system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Impact", "Haettenschweiler", var(--font-body);
+  --font-scale:   1;            /* bump to 1.1 for larger text everywhere */
+
+  /* --- Layout ------------------------------------------------------------ */
+  --measure:      70ch;         /* max content width          */
+  --radius:       12px;
+  --gap:          1.5rem;
+}
+
+/* --- Reset ---------------------------------------------------------------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: calc(1rem * var(--font-scale));
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+  /* subtle vignette so a full-bleed hero image blends in */
+  background-image: radial-gradient(120% 60% at 50% 0%, #1a1614 0%, var(--color-bg) 60%);
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--color-accent); text-decoration: none; }
+a:hover,
+a:focus { text-decoration: underline; }
+
+/* --- Layout helpers ------------------------------------------------------- */
+.wrap {
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+.site-header {
+  text-align: center;
+  padding: 2rem 1.25rem 0.5rem;
+}
+
+.site-header .brand {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  line-height: 1;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.site-header .tagline {
+  color: var(--color-accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-size: 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+/* --- Hero ----------------------------------------------------------------- */
+.hero {
+  margin: 1.5rem auto 0;
+}
+
+.hero img {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.hero .caption {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* --- Sections ------------------------------------------------------------- */
+section { margin-top: 2.5rem; }
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+
+h2 {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  text-transform: uppercase;
+  border-bottom: 3px solid var(--color-accent);
+  padding-bottom: 0.35rem;
+  display: inline-block;
+}
+
+/* --- Buttons / call to action --------------------------------------------- */
+.button {
+  display: inline-block;
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 700;
+  padding: 0.85rem 1.4rem;
+  border-radius: var(--radius);
+  text-align: center;
+  transition: transform 0.08s ease, background 0.2s ease;
+}
+.button:hover,
+.button:focus { background: #c94620; text-decoration: none; transform: translateY(-2px); }
+
+.button--wide { display: block; width: 100%; }
+
+/* --- Card grid (home page sub-page links) --------------------------------- */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+  margin-top: 1.25rem;
+}
+
+.card {
+  display: block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+  color: var(--color-text);
+  transition: border-color 0.2s ease, transform 0.08s ease;
+}
+.card:hover,
+.card:focus {
+  text-decoration: none;
+  border-color: var(--color-accent);
+  transform: translateY(-3px);
+}
+.card h3 {
+  margin: 0 0 0.4rem;
+  color: var(--color-accent-2);
+  text-transform: uppercase;
+  font-size: 1.15rem;
+}
+.card p { margin: 0; color: var(--color-muted); font-size: 0.95rem; }
+
+/* --- Glossary / definition lists ------------------------------------------ */
+.glossary { list-style: none; padding: 0; margin: 1.25rem 0 0; }
+.glossary li {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.glossary .term {
+  font-weight: 700;
+  color: var(--color-accent-2);
+  font-size: 1.1rem;
+}
+.glossary .def { margin: 0.25rem 0 0; color: var(--color-text); }
+
+/* --- Back link ------------------------------------------------------------ */
+.back-link {
+  display: inline-block;
+  margin: 1.5rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+/* --- Footer / contact ----------------------------------------------------- */
+.site-footer {
+  margin-top: 4rem;
+  padding: 2rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+.site-footer a { color: var(--color-accent-2); }
+
+/* --- Larger screens ------------------------------------------------------- */
+@media (min-width: 640px) {
+  .card-grid { grid-template-columns: 1fr 1fr; }
+  .button--wide { display: inline-block; width: auto; }
+}
