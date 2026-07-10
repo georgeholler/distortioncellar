@@ -12,6 +12,8 @@ Website for the **Distortion Cellar** internet radio show. A plain static site
 | `themed-shows.html`       | Themed Shows                              |
 | `recurring-segments.html` | Recurring Segments                        |
 | `biography.html`          | Mini Biography                            |
+| `credits.html`            | Credits                                   |
+| `policies.html`           | Policies                                  |
 | `css/style.css`           | All styling (mobile-first, responsive)    |
 | `images/`                 | Your images (add `hero.jpg`)              |
 
