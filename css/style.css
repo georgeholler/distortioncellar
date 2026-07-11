@@ -126,12 +126,13 @@ h2 {
   padding: 0.85rem 1.4rem;
   border-radius: var(--radius);
   text-align: center;
+  margin: 0.3rem 0.6rem 0.3rem 0;
   transition: transform 0.08s ease, background 0.2s ease;
 }
 .button:hover,
 .button:focus { background: #c94620; text-decoration: none; transform: translateY(-2px); }
 
-.button--wide { display: block; width: 100%; }
+.button--wide { display: block; width: 100%; margin-right: 0; }
 
 /* --- Card grid (home page sub-page links) --------------------------------- */
 .card-grid {
