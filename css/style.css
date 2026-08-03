@@ -12,6 +12,7 @@
   --color-accent:    #e0562d;   /* links, buttons, highlights */
   --color-accent-2:  #f0a020;   /* secondary accent           */
   --color-border:    #322d29;   /* hairlines                  */
+  --color-link-yellow: #f5c542; /* .link-yellow inline links  */
 
   /* --- Typography -------------------------------------------------------- */
   --font-body:    system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -47,6 +48,19 @@ img { max-width: 100%; height: auto; display: block; }
 a { color: var(--color-accent); text-decoration: none; }
 a:hover,
 a:focus { text-decoration: underline; }
+
+/* Always-underlined, yellower link for inline body copy */
+a.link-yellow {
+  color: var(--color-link-yellow);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+a.link-yellow:hover,
+a.link-yellow:focus {
+  color: #ffdc6a;
+  text-decoration-thickness: 2px;
+}
 
 /* --- Layout helpers ------------------------------------------------------- */
 .wrap {
