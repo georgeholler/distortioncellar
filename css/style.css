@@ -192,6 +192,14 @@ h2 {
 }
 .glossary .def { margin: 0.25rem 0 0; color: var(--color-text); }
 
+/* Nested lists inside a glossary entry shouldn't pick up the entry hairline */
+.glossary .planet-list li {
+  padding: 0.15rem 0;
+  border-bottom: 0;
+}
+.planet-list .body { font-weight: 700; color: var(--color-link-yellow); }
+.planet-list .mood { font-style: italic; color: var(--color-muted); }
+
 /* --- Back link ------------------------------------------------------------ */
 .back-link {
   display: inline-block;
