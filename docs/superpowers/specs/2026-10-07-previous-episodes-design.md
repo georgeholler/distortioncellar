@@ -21,7 +21,7 @@ where George can add notes (e.g. tracklist, commentary).
 | --- | --- |
 | `scripts/build-episodes.py` | Fetches episodes from Mixcloud and generates all pages |
 | `episodes/data.json` | Committed snapshot of episode metadata plus manual overrides |
-| `episodes/notes/ep-N.md` | George's notes for episode N. Created once as a stub; never overwritten |
+| `episodes/notes/ep-N.md` | George's notes for episode N. Created once as a stub (a single HTML comment, so a new episode shows no Notes box) and never overwritten |
 | `episodes/ep-N.html` | Generated episode page |
 | `previous-episodes.html` | Generated list page, newest first |
 | `index.html` | Gains a "Previous Episodes" card in the Explore grid |
@@ -32,9 +32,7 @@ where George can add notes (e.g. tracklist, commentary).
 The key is the episode number, parsed from the Mixcloud title with a
 case-insensitive pattern accepting `Ep 13`, `Ep13`, `Episode 2`, `Show 1`.
 The page URL is `/episodes/ep-13.html`. Mixcloud slugs are not used (they are
-inconsistent). If a title does not parse, the script exits with an error naming
-the title; the number can be set by hand in `episodes/data.json` and is kept on
-later runs. Duplicate episode numbers are an error.
+inconsistent). If a title does not parse, the script exits with an error naming the title and the Mixcloud key; the number is set by adding the key to "number_overrides" in episodes/data.json and is kept on later runs. Duplicate episode numbers are an error.
 
 ## Data flow
 
@@ -60,6 +58,7 @@ Works without JavaScript.
 
 A small built-in converter supports headings, paragraphs, bulleted and numbered
 lists, links, bold and italic. HTML in notes is escaped.
+Markdown # / ## / ### render as h4 / h5 / h6, since the page itself uses h2 and h3.
 
 ## List page
 

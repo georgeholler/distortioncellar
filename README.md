@@ -8,6 +8,8 @@ Website for the **Distortion Cellar** internet radio show. A plain static site
 | File                      | Purpose                                   |
 | ------------------------- | ----------------------------------------- |
 | `index.html`              | Home: hero image, description, Mixcloud links, contact, sub-page links |
+| `previous-episodes.html`  | Previous Episodes list (generated)        |
+| `episodes/ep-N.html`      | One page per episode (generated)          |
 | `george-glossary.html`    | The George Glossary                       |
 | `themed-shows.html`       | Themed Shows                              |
 | `recurring-segments.html` | Recurring Segments                        |
@@ -16,6 +18,27 @@ Website for the **Distortion Cellar** internet radio show. A plain static site
 | `policies.html`           | Policies                                  |
 | `css/style.css`           | All styling (mobile-first, responsive)    |
 | `images/`                 | Your images (add `hero.jpg`)              |
+
+## Previous Episodes
+
+Episode pages are generated from the Mixcloud feed. After posting a new episode:
+
+```
+python3 scripts/build-episodes.py        # add --dry-run to preview
+```
+
+Then commit and push. To add notes to an episode, edit
+`episodes/notes/ep-N.md` (markdown: `# headings`, `- lists`, `[links](url)`,
+`**bold**`, `*italic*`) and run the script again. The script creates the notes
+file the first time it sees an episode and never overwrites it.
+
+- Episode URLs are `episodes/ep-N.html`, where N is parsed from the Mixcloud
+  title ("Ep 13", "Ep13", "Episode 13", "Show 13"). If a title has no number,
+  the script stops; add `"<mixcloud key>": N` to `number_overrides` in
+  `episodes/data.json` and run it again.
+- To correct a title, date, tags or image for one episode, add an `override`
+  object to that episode in `episodes/data.json`, e.g. `"override": {"date": "2026-10-04"}`.
+- Tests: `python3 -m unittest discover -s tests -v`
 
 ## Things to fill in
 
