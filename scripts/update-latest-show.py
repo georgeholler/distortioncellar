@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Update the "Latest Show" link in index.html from the Mixcloud account feed.
+"""Update the "Latest Episode" link in index.html from the Mixcloud account feed.
 
 Reads the newest cloudcast from https://api.mixcloud.com/<user>/cloudcasts/
-and rewrites the href of the <a> tag whose text is "Latest Show".
+and rewrites the href of the <a> tag whose text is "Latest Episode".
 
 Usage:
   scripts/update-latest-show.py             # update index.html in place
@@ -24,10 +24,10 @@ DEFAULT_FILE = os.path.join(
 )
 API = "https://api.mixcloud.com/{user}/cloudcasts/?limit=10"
 
-# Matches the href of an <a ...>Latest Show</a> tag. [^>] keeps the match inside
+# Matches the href of an <a ...>Latest Episode</a> tag. [^>] keeps the match inside
 # the opening tag, so it works whether or not the attributes span several lines.
 LINK_RE = re.compile(
-    r'(<a\b[^>]*?href=")([^"]*)("[^>]*>\s*Latest Show\s*</a>)',
+    r'(<a\b[^>]*?href=")([^"]*)("[^>]*>\s*Latest Episode\s*</a>)',
     re.IGNORECASE,
 )
 
@@ -75,11 +75,11 @@ def main():
     match = LINK_RE.search(html)
     if not match:
         raise SystemExit(
-            'No <a ...>Latest Show</a> link found in %s.' % args.file
+            'No <a ...>Latest Episode</a> link found in %s.' % args.file
         )
 
     current = match.group(2)
-    print("Latest show: %s" % name)
+    print("Latest episode: %s" % name)
     print("  url:     %s" % url)
     print("  current: %s" % current)
 
