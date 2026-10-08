@@ -95,3 +95,38 @@ def effective(episode):
     merged = dict(episode)
     merged.update(episode.get("override") or {})
     return merged
+
+
+def default_fetch_json(url):
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "distortioncellar-site-updater/1.0"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return json.load(resp)
+
+
+def fetch_cloudcasts(user, fetch_json=default_fetch_json):
+    """Return every cloudcast for `user`, following the API's paging links."""
+    url = API.format(user=user)
+    cloudcasts = []
+    visited = set()
+    while url and url not in visited:
+        visited.add(url)
+        payload = fetch_json(url)
+        cloudcasts.extend(payload.get("data") or [])
+        url = (payload.get("paging") or {}).get("next")
+    return cloudcasts
+
+
+def load_data(path):
+    """Load the episodes/data.json snapshot (empty snapshot if missing)."""
+    if not os.path.exists(path):
+        return {"number_overrides": {}, "episodes": {}}
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    data.setdefault("number_overrides", {})
+    data.setdefault("episodes", {})
+    return data
+
+
+def dump_data(data):
+    return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
