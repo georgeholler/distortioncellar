@@ -171,6 +171,21 @@ COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
 BULLET_RE = re.compile(r"^[-*]\s+(.+)$")
 NUMBERED_RE = re.compile(r"^\d+[.)]\s+(.+)$")
+# Backslash escapes (\: \. \* ...) are swapped for private-use placeholders
+# while the other rules run, then turned back into the literal character.
+ESCAPE_RE = re.compile(r"\\([!-/:-@\[-`{-~])")
+RESTORE_RE = re.compile("\ue000(\\d+)\ue001")
+ESC_OPEN, ESC_CLOSE, LINE_BREAK = "\ue000", "\ue001", "\ue002"
+
+
+def _restore_escapes(text):
+    return RESTORE_RE.sub(lambda m: chr(int(m.group(1))), text)
+
+
+def _strip_sentinels(text, keep_break=False):
+    """Drop our placeholder characters from input so they cannot be forged."""
+    text = text.replace(ESC_OPEN, "").replace(ESC_CLOSE, "")
+    return text if keep_break else text.replace(LINE_BREAK, "")
 
 
 def _emphasis(escaped):
@@ -181,24 +196,29 @@ def _emphasis(escaped):
 
 def render_inline(text):
     """Escape `text` and apply links, bold and italic."""
-    escaped = html.escape(text, quote=True)
+    escaped = html.escape(_strip_sentinels(text, keep_break=True), quote=True)
+    escaped = ESCAPE_RE.sub(
+        lambda m: ESC_OPEN + str(ord(m.group(1))) + ESC_CLOSE, escaped)
     out = []
     pos = 0
     for match in LINK_RE.finditer(escaped):
         out.append(_emphasis(escaped[pos:match.start()]))
-        label, url = match.group(1), match.group(2)
+        label = match.group(1)
+        # Check the URL as it will really appear, so an escaped colon
+        # (javascript\:...) cannot slip past the scheme allowlist.
+        url = _restore_escapes(match.group(2))
         if SAFE_URL_RE.match(url):
             out.append('<a href="%s">%s</a>' % (url, _emphasis(label)))
         else:
             out.append(_emphasis(match.group(0)))
         pos = match.end()
     out.append(_emphasis(escaped[pos:]))
-    return "".join(out)
+    return _restore_escapes("".join(out)).replace(LINE_BREAK, "<br>\n")
 
 
 def render_markdown(text):
     """Convert notes markdown to an HTML fragment ('' if there is no content)."""
-    lines = COMMENT_RE.sub("", text).splitlines()
+    lines = _strip_sentinels(COMMENT_RE.sub("", text)).splitlines()
     blocks = []
     para = []
     items = []
@@ -206,7 +226,10 @@ def render_markdown(text):
 
     def flush():
         if para:
-            blocks.append("<p>%s</p>" % render_inline(" ".join(para)))
+            joined = "".join(
+                line + ("" if i == len(para) - 1 else (LINE_BREAK if hard else " "))
+                for i, (line, hard) in enumerate(para))
+            blocks.append("<p>%s</p>" % render_inline(joined))
             del para[:]
         if items:
             blocks.append("<%s>%s</%s>" % (
@@ -238,7 +261,12 @@ def render_markdown(text):
         else:
             if items:
                 flush()
-            para.append(line)
+            # Two trailing spaces (or a trailing backslash) force a line break.
+            hard = raw.endswith("  ") or (line.endswith("\\")
+                                          and not line.endswith("\\\\"))
+            if line.endswith("\\") and hard and not raw.endswith("  "):
+                line = line[:-1].rstrip()
+            para.append((line, hard))
     flush()
     return "\n".join(blocks)
 

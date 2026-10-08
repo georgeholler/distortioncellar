@@ -79,5 +79,38 @@ class Markdown(unittest.TestCase):
         self.assertEqual(md("  \n\n \t\n"), "")
 
 
+class LineBreaksAndEscapes(unittest.TestCase):
+    def test_two_trailing_spaces_make_a_line_break(self):
+        self.assertEqual(md("Miles Davis  \nline two  \nline three"),
+                         "<p>Miles Davis<br>\nline two<br>\nline three</p>")
+
+    def test_trailing_backslash_makes_a_line_break(self):
+        self.assertEqual(md("a\\\nb"), "<p>a<br>\nb</p>")
+
+    def test_single_newline_still_joins_and_emphasis_spans_lines(self):
+        self.assertEqual(md("one\ntwo"), "<p>one two</p>")
+        self.assertEqual(md("*one\ntwo*"), "<p><em>one two</em></p>")
+
+    def test_backslash_escapes_in_link_labels(self):
+        self.assertEqual(
+            md("[https\\://www\\.x.com/a](https://www.x.com/a)"),
+            '<p><a href="https://www.x.com/a">https://www.x.com/a</a></p>')
+
+    def test_escaped_markers_are_literal(self):
+        self.assertEqual(md("\\*not italic\\*"), "<p>*not italic*</p>")
+
+    def test_escaped_colon_cannot_smuggle_a_javascript_link(self):
+        self.assertNotIn("<a", md("[x](javascript\\:alert(1))"))
+
+    def test_escaped_angle_brackets_stay_inert(self):
+        out = md("\\<script\\>alert(1)\\</script\\>")
+        self.assertNotIn("<script", out)
+
+    def test_forged_placeholder_characters_are_dropped(self):
+        out = md("a\ue0001058\ue001b [x](javascript\ue0001058\ue001alert(1))")
+        self.assertNotIn(":", out)
+        self.assertIn("a1058b", out)
+
+
 if __name__ == "__main__":
     unittest.main()
