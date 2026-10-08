@@ -71,6 +71,32 @@ class BuildTests(unittest.TestCase):
         self.assertTrue(self.logs[0].startswith("WARNING"))
         self.assertTrue(os.path.exists(self.path("episodes", "ep-13.html")))
 
+    def test_malformed_response_falls_back_to_snapshot(self):
+        self.run_build()
+        del self.logs[:]
+
+        def bad(url):
+            raise ValueError("bad json")
+        self.run_build(fetch_json=bad)
+        self.assertTrue(self.logs[0].startswith("WARNING"))
+
+    def test_malformed_response_without_snapshot_is_a_clear_error(self):
+        def bad(url):
+            raise ValueError("bad json")
+        with self.assertRaises(SystemExit) as ctx:
+            self.run_build(fetch_json=bad)
+        self.assertIn("Mixcloud", str(ctx.exception))
+
+    def test_bom_notes_heading(self):
+        self.run_build()
+        with open(self.path("episodes", "notes", "ep-13.md"), "wb") as fh:
+            fh.write(b"\xef\xbb\xbf# Tracklist\n")
+        self.run_build()
+        self.assertIn("<h4>Tracklist</h4>", self.read("episodes", "ep-13.html"))
+
+    def test_stub_suggests_one_dash_per_track(self):
+        self.assertIn("one '- ' line per track", be.stub_notes(5))
+
     def test_api_down_without_snapshot_is_a_clear_error(self):
         def down(url):
             raise urllib.error.URLError("boom")

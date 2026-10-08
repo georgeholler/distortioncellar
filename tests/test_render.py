@@ -71,6 +71,10 @@ class ListPage(unittest.TestCase):
         self.assertIn('href="index.html"', page)
         self.assertIn("Previous Episodes", page)
 
+    def test_intro_says_episode_not_show(self):
+        page = be.render_list_page([make_ep(1)])
+        self.assertIn("Every episode, newest first.", page)
+
     def test_titles_are_escaped(self):
         page = be.render_list_page([make_ep(12, title="Monk & <b>Trane</b>")])
         self.assertIn("Monk &amp; &lt;b&gt;Trane&lt;/b&gt;", page)

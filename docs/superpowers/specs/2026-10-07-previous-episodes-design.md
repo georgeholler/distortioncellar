@@ -40,7 +40,7 @@ inconsistent). If a title does not parse, the script exits with an error naming 
    following `paging.next` until exhausted.
 2. Merge into `episodes/data.json`, keyed by episode number. Stored per
    episode: number, title, Mixcloud URL, Mixcloud key (used for the embed),
-   created date, tags, artwork URL. Manual overrides in `data.json` win over
+   episode date (the date in the title when present and not later than the upload date, otherwise the Mixcloud upload date), tags, artwork URL. Manual overrides in `data.json` win over
    fetched values.
 3. If the API is unreachable, build from the existing `data.json` and warn.
 4. For each episode, create `episodes/notes/ep-N.md` (stub heading only) if

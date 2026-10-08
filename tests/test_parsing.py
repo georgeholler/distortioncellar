@@ -56,9 +56,37 @@ class ToRecord(unittest.TestCase):
         self.assertEqual(rec["title"], "Ep 13 - 60s Soul, Part 3")
         self.assertEqual(rec["url"], cc["url"])
         self.assertEqual(rec["key"], cc["key"])
-        self.assertEqual(rec["date"], "2026-10-05")
+        self.assertEqual(rec["date"], "2026-10-04")
         self.assertIn("Soul", rec["tags"])
         self.assertTrue(rec["image"].startswith("https://"))
+
+
+class RecordDate(unittest.TestCase):
+    def cc(self, name, created):
+        cc = dict(load_fixture()["data"][0])
+        cc["name"] = name
+        cc["created_time"] = created
+        return cc
+
+    def test_title_date_wins(self):
+        rec = be.to_record(self.cc("Distortion Cellar - Ep 9 - X - 2026/08/30",
+                                   "2026-08-31T02:00:00Z"))
+        self.assertEqual(rec["date"], "2026-08-30")
+
+    def test_dashed_title_date(self):
+        rec = be.to_record(self.cc("Distortion Cellar - Ep 9 - X - 2026-08-30",
+                                   "2026-08-31T02:00:00Z"))
+        self.assertEqual(rec["date"], "2026-08-30")
+
+    def test_no_title_date_uses_upload_date(self):
+        rec = be.to_record(self.cc("Distortion Cellar - Ep 9 - X",
+                                   "2026-08-31T02:00:00Z"))
+        self.assertEqual(rec["date"], "2026-08-31")
+
+    def test_title_date_after_upload_date_uses_upload_date(self):
+        rec = be.to_record(self.cc("Distortion Cellar - Ep 11 - X - 2026/09/20",
+                                   "2026-09-16T02:00:00Z"))
+        self.assertEqual(rec["date"], "2026-09-16")
 
 
 class MergeEpisodes(unittest.TestCase):
@@ -76,6 +104,20 @@ class MergeEpisodes(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             be.merge_episodes(self.EMPTY, [cc, other])
         self.assertIn("twice", str(ctx.exception))
+        self.assertIn(cc["key"], str(ctx.exception))
+        self.assertIn("/distortioncellar/other/", str(ctx.exception))
+        self.assertIn("number_overrides", str(ctx.exception))
+
+    def test_renumbered_upload_drops_ghost_and_carries_override(self):
+        cc = load_fixture()["data"][0]
+        old = {"number": 12, "title": "Old", "url": "u", "key": cc["key"],
+               "date": "2020-01-01", "tags": [], "image": "",
+               "override": {"date": "2026-10-04"}}
+        data = {"number_overrides": {}, "episodes": {"12": old}}
+        merged = be.merge_episodes(data, [cc])
+        self.assertEqual(list(merged["episodes"]), ["13"])
+        self.assertEqual(merged["episodes"]["13"]["override"],
+                         {"date": "2026-10-04"})
 
     def test_keeps_overrides_and_episodes_missing_from_feed(self):
         cc = load_fixture()["data"][0]
@@ -95,6 +137,14 @@ class MergeEpisodes(unittest.TestCase):
               "override": {"date": "2026-10-04"}}
         self.assertEqual(be.effective(ep)["date"], "2026-10-04")
         self.assertEqual(be.effective(ep)["title"], "A")
+
+    def test_effective_ignores_identity_overrides(self):
+        ep = {"number": 13, "key": "/k/", "title": "A",
+              "override": {"number": 50, "key": "/z/", "title": "X"}}
+        out = be.effective(ep)
+        self.assertEqual(out["number"], 13)
+        self.assertEqual(out["key"], "/k/")
+        self.assertEqual(out["title"], "X")
 
 
 if __name__ == "__main__":

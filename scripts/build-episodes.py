@@ -15,6 +15,7 @@ Usage:
 
 import argparse
 import html
+import http.client
 import json
 import os
 import re
@@ -31,6 +32,7 @@ API = "https://api.mixcloud.com/{user}/cloudcasts/?limit=100"
 NUMBER_RE = re.compile(r"\b(?:episode|ep|show)\s*#?\s*(\d+)\b", re.IGNORECASE)
 PREFIX_RE = re.compile(r"^\s*Distortion Cel+\w*\s*-\s*", re.IGNORECASE)
 TRAILING_DATE_RE = re.compile(r"\s*-\s*\d{4}[/-]\d{2}[/-]\d{2}\s*$")
+TITLE_DATE_RE = re.compile(r"(\d{4})[/-](\d{2})[/-](\d{2})\s*$")
 
 
 def parse_episode_number(title, key="", number_overrides=None):
@@ -53,6 +55,16 @@ def display_title(title):
     return cleaned or title.strip()
 
 
+def episode_date(title, created_time):
+    """The date George wrote in the title, unless absent or later than upload."""
+    uploaded = created_time[:10]
+    match = TITLE_DATE_RE.search(title)
+    if not match:
+        return uploaded
+    titled = "-".join(match.groups())
+    return uploaded if titled > uploaded else titled
+
+
 def to_record(cloudcast, number_overrides=None):
     """Reduce a Mixcloud cloudcast to the fields we store."""
     pictures = cloudcast.get("pictures") or {}
@@ -62,7 +74,7 @@ def to_record(cloudcast, number_overrides=None):
         "title": display_title(cloudcast["name"]),
         "url": cloudcast["url"],
         "key": cloudcast["key"],
-        "date": cloudcast["created_time"][:10],
+        "date": episode_date(cloudcast["name"], cloudcast["created_time"]),
         "tags": [t["name"] for t in cloudcast.get("tags") or []],
         "image": (pictures.get("extra_large") or pictures.get("320wx320h")
                   or pictures.get("large") or ""),
@@ -82,10 +94,21 @@ def merge_episodes(data, cloudcasts):
         record = to_record(cloudcast, overrides)
         number = str(record["number"])
         if number in seen:
-            raise ValueError("Episode %s appears twice on Mixcloud: %r and %r"
-                             % (number, seen[number], record["title"]))
-        seen[number] = record["title"]
-        record["override"] = episodes.get(number, {}).get("override", {})
+            other_title, other_key = seen[number]
+            raise ValueError(
+                "Episode %s appears twice on Mixcloud: %r (%s) and %r (%s). "
+                'Add "<mixcloud key>": <number> to "number_overrides" in '
+                "episodes/data.json for one of them and re-run."
+                % (number, other_title, other_key, record["title"], record["key"]))
+        seen[number] = (record["title"], record["key"])
+        override = episodes.get(number, {}).get("override", {})
+        # An upload that changed number leaves a ghost under its old number.
+        for old_number, old in list(episodes.items()):
+            if old_number != number and old.get("key") == record["key"]:
+                if not override:
+                    override = old.get("override", {})
+                del episodes[old_number]
+        record["override"] = override
         episodes[number] = record
     return {"number_overrides": overrides, "episodes": episodes}
 
@@ -93,7 +116,8 @@ def merge_episodes(data, cloudcasts):
 def effective(episode):
     """The episode record with its manual overrides applied."""
     merged = dict(episode)
-    merged.update(episode.get("override") or {})
+    merged.update({k: v for k, v in (episode.get("override") or {}).items()
+                   if k not in ("number", "key")})
     return merged
 
 
@@ -136,11 +160,11 @@ def dump_data(data):
 # Deliberately tiny: headings, paragraphs, lists, links, bold, italic. All text
 # is HTML-escaped first, so nothing typed in a notes file becomes markup.
 
-LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+LINK_RE = re.compile(r"\[([^\]]+)\]\(((?:[^()\s]|\([^()\s]*\))+)\)")
 BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 STAR_ITALIC_RE = re.compile(r"(?<![\w*])\*(?=\S)(.+?)(?<=\S)\*(?![\w*])")
 UNDERSCORE_ITALIC_RE = re.compile(r"(?<!\w)_(?=\S)(.+?)(?<=\S)_(?!\w)")
-SAFE_URL_RE = re.compile(r"^(https?://|mailto:|/|#|[^:]*$)", re.IGNORECASE)
+SAFE_URL_RE = re.compile(r"^(?!//)(https?://|mailto:|/|#|[^:]*$)", re.IGNORECASE)
 COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
 BULLET_RE = re.compile(r"^[-*]\s+(.+)$")
@@ -330,7 +354,7 @@ def render_list_page(episodes):
     body = "\n".join([
         "    <section>",
         "      <h2>Previous Episodes</h2>",
-        "      <p>Every episode of the show, newest first. Open one for its notes"
+        "      <p>Every episode, newest first. Open one for its notes"
         " and a link you can share.</p>",
         '      <div class="episode-list">',
         "\n".join(cards),
@@ -346,7 +370,8 @@ def render_list_page(episodes):
 
 def stub_notes(number):
     return ("<!-- Notes for episode %d. Delete this line and write your notes "
-            "in markdown. -->\n" % number)
+            "in markdown (use one '- ' line per track so a tracklist stays a "
+            "list). -->\n" % number)
 
 
 def write_file(root, rel, content, dry_run, log, only_if_missing=False):
@@ -371,7 +396,7 @@ def read_notes(root, number):
     path = os.path.join(root, "episodes", "notes", "ep-%d.md" % number)
     if not os.path.exists(path):
         return stub_notes(number)
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:
         return fh.read()
 
 
@@ -381,7 +406,8 @@ def build(root, user=DEFAULT_USER, fetch_json=default_fetch_json,
     data = load_data(os.path.join(root, "episodes", "data.json"))
     try:
         cloudcasts = fetch_cloudcasts(user, fetch_json)
-    except OSError as exc:  # URLError, HTTPError and timeouts all land here
+    except (OSError, ValueError, http.client.HTTPException) as exc:
+        # URLError/HTTPError/timeouts, bad JSON and truncated responses
         if not data["episodes"]:
             raise SystemExit(
                 "Could not reach Mixcloud (%s) and there is no saved "

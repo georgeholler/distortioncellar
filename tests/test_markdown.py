@@ -37,6 +37,14 @@ class Markdown(unittest.TestCase):
         self.assertEqual(md("[q](https://x.com/?a=1&b=2)"),
                          '<p><a href="https://x.com/?a=1&amp;b=2">q</a></p>')
 
+    def test_link_with_parentheses(self):
+        out = md("[Love](https://en.wikipedia.org/wiki/Love_(band))")
+        self.assertIn('href="https://en.wikipedia.org/wiki/Love_(band)"', out)
+        self.assertNotIn("</a>)", out)
+
+    def test_protocol_relative_url_is_not_a_link(self):
+        self.assertNotIn("<a", md("[x](//evil.com)"))
+
     def test_link_url_is_not_italicized(self):
         out = md("[a](https://x.com/_a_b_)")
         self.assertIn('href="https://x.com/_a_b_"', out)

@@ -30,7 +30,9 @@ python3 scripts/build-episodes.py        # add --dry-run to preview
 Then commit and push. To add notes to an episode, edit
 `episodes/notes/ep-N.md` (markdown: `# headings`, `- lists`, `[links](url)`,
 `**bold**`, `*italic*`) and run the script again. The script creates the notes
-file the first time it sees an episode and never overwrites it.
+file the first time it sees an episode and never overwrites it. Use one `- `
+line per track in a tracklist; plain lines on consecutive rows run together
+into a single paragraph.
 
 - Episode URLs are `episodes/ep-N.html`, where N is parsed from the Mixcloud
   title ("Ep 13", "Ep13", "Episode 13", "Show 13"). If a title has no number,
