@@ -219,6 +219,48 @@ h2 {
 }
 .site-footer a { color: var(--color-accent-2); }
 
+/* --- Episodes ------------------------------------------------------------- */
+.episode-meta { color: var(--color-muted); margin: 0.25rem 0 1rem; }
+
+.episode-art img {
+  width: 100%;
+  max-width: 320px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.episode-player { display: block; width: 100%; border: 0; margin: 1rem 0; }
+
+.episode-notes h3 {
+  color: var(--color-accent-2);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.episode-notes h4,
+.episode-notes h5,
+.episode-notes h6 { color: var(--color-link-yellow); margin: 1.25rem 0 0.4rem; }
+.episode-notes a { color: var(--color-link-yellow); text-decoration: underline; }
+
+.episode-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
+
+.episode-list { display: grid; grid-template-columns: 1fr; gap: var(--gap); margin-top: 1.25rem; }
+.episode-card { display: flex; align-items: center; gap: 1rem; }
+.episode-card img {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.episode-card h3 { font-size: 1.05rem; }
+
 /* --- Larger screens ------------------------------------------------------- */
 @media (min-width: 640px) {
   .card-grid { grid-template-columns: 1fr 1fr; }
