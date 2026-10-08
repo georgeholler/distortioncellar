@@ -147,6 +147,11 @@ class DisplayTitle(unittest.TestCase):
             be.display_title("Distortion Cellar - Ep7 - Mixed Bag #4 - 2026-08-16"),
             "Ep7 - Mixed Bag #4")
 
+    def test_tolerates_misspelled_show_name(self):
+        self.assertEqual(
+            be.display_title("Distortion Celler - Ep 12 - Jazz - 2026/09/27"),
+            "Ep 12 - Jazz")
+
     def test_leaves_other_titles_alone(self):
         self.assertEqual(be.display_title("Something Else"), "Something Else")
 
@@ -248,7 +253,7 @@ API = "https://api.mixcloud.com/{user}/cloudcasts/?limit=100"
 
 # "Ep 13", "Ep13", "Episode 2", "Show 1" (case-insensitive).
 NUMBER_RE = re.compile(r"\b(?:episode|ep|show)\s*#?\s*(\d+)\b", re.IGNORECASE)
-PREFIX_RE = re.compile(r"^\s*Distortion Cellar\s*-\s*", re.IGNORECASE)
+PREFIX_RE = re.compile(r"^\s*Distortion Cel+\w*\s*-\s*", re.IGNORECASE)
 TRAILING_DATE_RE = re.compile(r"\s*-\s*\d{4}[/-]\d{2}[/-]\d{2}\s*$")
 
 
