@@ -130,3 +130,88 @@ def load_data(path):
 
 def dump_data(data):
     return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+
+
+# --- Notes markdown -----------------------------------------------------------
+# Deliberately tiny: headings, paragraphs, lists, links, bold, italic. All text
+# is HTML-escaped first, so nothing typed in a notes file becomes markup.
+
+LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+STAR_ITALIC_RE = re.compile(r"(?<![\w*])\*(?=\S)(.+?)(?<=\S)\*(?![\w*])")
+UNDERSCORE_ITALIC_RE = re.compile(r"(?<!\w)_(?=\S)(.+?)(?<=\S)_(?!\w)")
+SAFE_URL_RE = re.compile(r"^(https?://|mailto:|/|#|[^:]*$)", re.IGNORECASE)
+COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$")
+BULLET_RE = re.compile(r"^[-*]\s+(.+)$")
+NUMBERED_RE = re.compile(r"^\d+[.)]\s+(.+)$")
+
+
+def _emphasis(escaped):
+    escaped = BOLD_RE.sub(r"<strong>\1</strong>", escaped)
+    escaped = STAR_ITALIC_RE.sub(r"<em>\1</em>", escaped)
+    return UNDERSCORE_ITALIC_RE.sub(r"<em>\1</em>", escaped)
+
+
+def render_inline(text):
+    """Escape `text` and apply links, bold and italic."""
+    escaped = html.escape(text, quote=True)
+    out = []
+    pos = 0
+    for match in LINK_RE.finditer(escaped):
+        out.append(_emphasis(escaped[pos:match.start()]))
+        label, url = match.group(1), match.group(2)
+        if SAFE_URL_RE.match(url):
+            out.append('<a href="%s">%s</a>' % (url, _emphasis(label)))
+        else:
+            out.append(_emphasis(match.group(0)))
+        pos = match.end()
+    out.append(_emphasis(escaped[pos:]))
+    return "".join(out)
+
+
+def render_markdown(text):
+    """Convert notes markdown to an HTML fragment ('' if there is no content)."""
+    lines = COMMENT_RE.sub("", text).splitlines()
+    blocks = []
+    para = []
+    items = []
+    list_tag = [None]
+
+    def flush():
+        if para:
+            blocks.append("<p>%s</p>" % render_inline(" ".join(para)))
+            del para[:]
+        if items:
+            blocks.append("<%s>%s</%s>" % (
+                list_tag[0],
+                "".join("<li>%s</li>" % render_inline(i) for i in items),
+                list_tag[0]))
+            del items[:]
+            list_tag[0] = None
+
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            flush()
+            continue
+        heading = HEADING_RE.match(line)
+        bullet = BULLET_RE.match(line)
+        numbered = NUMBERED_RE.match(line)
+        if heading:
+            flush()
+            level = min(len(heading.group(1)), 3) + 3  # '#' -> h4 ... h6
+            blocks.append("<h%d>%s</h%d>"
+                          % (level, render_inline(heading.group(2)), level))
+        elif bullet or numbered:
+            tag = "ul" if bullet else "ol"
+            if para or (items and list_tag[0] != tag):
+                flush()
+            list_tag[0] = tag
+            items.append((bullet or numbered).group(1))
+        else:
+            if items:
+                flush()
+            para.append(line)
+    flush()
+    return "\n".join(blocks)
