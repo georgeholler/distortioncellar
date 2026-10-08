@@ -8,7 +8,7 @@ Website for the **Distortion Cellar** internet radio show. A plain static site
 | File                      | Purpose                                   |
 | ------------------------- | ----------------------------------------- |
 | `index.html`              | Home: hero image, description, Mixcloud links, contact, sub-page links |
-| `previous-episodes.html`  | Previous Episodes list (generated)        |
+| `previous-episodes.html`  | All Episodes list (generated)             |
 | `episodes/ep-N.html`      | One page per episode (generated)          |
 | `george-glossary.html`    | The George Glossary                       |
 | `themed-shows.html`       | Themed Shows                              |
@@ -19,7 +19,7 @@ Website for the **Distortion Cellar** internet radio show. A plain static site
 | `css/style.css`           | All styling (mobile-first, responsive)    |
 | `images/`                 | Your images (add `hero.jpg`)              |
 
-## Previous Episodes
+## All Episodes
 
 Episode pages are generated from the Mixcloud feed. After posting a new episode:
 

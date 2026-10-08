@@ -69,7 +69,7 @@ class ListPage(unittest.TestCase):
                         page.index("episodes/ep-2.html"))
         self.assertIn('href="css/style.css"', page)
         self.assertIn('href="index.html"', page)
-        self.assertIn("Previous Episodes", page)
+        self.assertIn("All Episodes", page)
 
     def test_intro_says_episode_not_show(self):
         page = be.render_list_page([make_ep(1)])
@@ -80,7 +80,7 @@ class ListPage(unittest.TestCase):
         self.assertIn("Monk &amp; &lt;b&gt;Trane&lt;/b&gt;", page)
 
     def test_empty_list_still_renders(self):
-        self.assertIn("Previous Episodes", be.render_list_page([]))
+        self.assertIn("All Episodes", be.render_list_page([]))
 
 
 if __name__ == "__main__":

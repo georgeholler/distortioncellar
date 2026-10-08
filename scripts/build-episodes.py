@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Previous Episodes pages from the Mixcloud account feed.
+"""Build the episode pages from the Mixcloud account feed.
 
 Fetches every cloudcast for the account, keeps a snapshot in
 episodes/data.json, and writes:
@@ -334,7 +334,7 @@ def render_episode_page(episode, notes_html, prev_episode=None, next_episode=Non
         % (prev_link, next_link))
     parts.append("    </section>")
     return page_html(ep["title"], "Distortion Cellar episode: " + ep["title"],
-                     "Previous Episodes", "\n".join(parts), root="../")
+                     "All Episodes", "\n".join(parts), root="../")
 
 
 def render_list_page(episodes):
@@ -353,7 +353,7 @@ def render_list_page(episodes):
             % (episode_filename(ep["number"]), image, esc(ep["title"]), esc(ep["date"])))
     body = "\n".join([
         "    <section>",
-        "      <h2>Previous Episodes</h2>",
+        "      <h2>All Episodes</h2>",
         "      <p>Every episode, newest first. Open one for its notes"
         " and a link you can share.</p>",
         '      <div class="episode-list">',
@@ -362,8 +362,8 @@ def render_list_page(episodes):
         '      <a class="back-link" href="index.html">&larr; Back to home</a>',
         "    </section>",
     ])
-    return page_html("Previous Episodes", "Every Distortion Cellar episode.",
-                     "Previous Episodes", body)
+    return page_html("All Episodes", "Every Distortion Cellar episode.",
+                     "All Episodes", body)
 
 
 # --- Build --------------------------------------------------------------------
