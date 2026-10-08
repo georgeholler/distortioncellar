@@ -27,7 +27,8 @@ Episode pages are generated from the Mixcloud feed. After posting a new episode:
 python3 scripts/build-episodes.py        # add --dry-run to preview
 ```
 
-Then commit and push. To add notes to an episode, edit
+The same command also points the home page's "Latest Episode" button at the
+newest episode. Then commit and push. To add notes to an episode, edit
 `episodes/notes/ep-N.md` (markdown: `# headings`, `- lists`, `[links](url)`,
 `**bold**`, `*italic*`) and run the script again. The script creates the notes
 file the first time it sees an episode and never overwrites it. Use one `- `

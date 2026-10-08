@@ -7,6 +7,8 @@ episodes/data.json, and writes:
   episodes/ep-N.html          one page per episode (N = episode number)
   episodes/notes/ep-N.md      notes for episode N, created once as a stub and
                               never overwritten -- edit these, then re-run.
+  index.html                  the "Latest Episode" button is pointed at the
+                              highest-numbered episode.
 
 Usage:
   scripts/build-episodes.py             # fetch, then write everything
@@ -400,6 +402,37 @@ def read_notes(root, number):
         return fh.read()
 
 
+# Matches the href of the <a ...>Latest Episode</a> button on the home page.
+# [^>] keeps the match inside the opening tag, so it works whether or not the
+# attributes span several lines.
+LATEST_LINK_RE = re.compile(
+    r'(<a\b[^>]*?href=")([^"]*)("[^>]*>\s*Latest Episode\s*</a>)',
+    re.IGNORECASE,
+)
+
+
+def update_latest_link(root, episodes, dry_run, log):
+    """Point index.html's "Latest Episode" button at the newest episode.
+
+    `episodes` is sorted by number, so the last one is the latest. A missing
+    index.html is skipped; a missing button only warns, so the episode pages
+    still build.
+    """
+    path = os.path.join(root, "index.html")
+    if not episodes or not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8", newline="") as fh:
+        page = fh.read()
+    match = LATEST_LINK_RE.search(page)
+    if not match:
+        log("WARNING: no <a ...>Latest Episode</a> link found in index.html; "
+            "left it alone")
+        return
+    url = html.escape(effective(episodes[-1])["url"], quote=True)
+    write_file(root, "index.html",
+               page[:match.start(2)] + url + page[match.end(2):], dry_run, log)
+
+
 def build(root, user=DEFAULT_USER, fetch_json=default_fetch_json,
           dry_run=False, log=print):
     data_rel = "episodes/data.json"
@@ -431,6 +464,7 @@ def build(root, user=DEFAULT_USER, fetch_json=default_fetch_json,
         write_file(root, "episodes/" + episode_filename(number), page, dry_run, log)
     write_file(root, "previous-episodes.html", render_list_page(episodes),
                dry_run, log)
+    update_latest_link(root, episodes, dry_run, log)
 
 
 def main(argv=None):

@@ -159,5 +159,94 @@ class BuildTests(unittest.TestCase):
                 self.assertTrue(os.path.exists(target), "%s -> %s" % (rel, href))
 
 
+INDEX_HTML = """<html><body>
+  <a class="button" href="https://www.mixcloud.com/distortioncellar/"
+     target="_blank" rel="noopener">Distortion Cellar on Mixcloud</a>
+  <a class="button" href="https://www.mixcloud.com/distortioncellar/old-episode/"
+     target="_blank" rel="noopener">Latest Episode</a>
+  <a class="button" href="previous-episodes.html">All Episodes</a>
+</body></html>
+"""
+
+
+class LatestEpisodeLink(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = tmp.name
+        self.fixture = load_fixture()
+        self.logs = []
+
+    def run_build(self, **kw):
+        kw.setdefault("fetch_json", lambda url: self.fixture)
+        be.build(self.root, log=self.logs.append, **kw)
+
+    def write_index(self, text=INDEX_HTML):
+        with open(os.path.join(self.root, "index.html"), "w", encoding="utf-8") as fh:
+            fh.write(text)
+
+    def index(self):
+        with open(os.path.join(self.root, "index.html"), encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_points_latest_button_at_highest_numbered_episode(self):
+        self.write_index()
+        self.run_build()
+        latest_url = self.fixture["data"][0]["url"]  # Ep 13
+        self.assertEqual(self.index(), INDEX_HTML.replace(
+            "https://www.mixcloud.com/distortioncellar/old-episode/", latest_url))
+        self.assertIn("updated index.html", self.logs)
+
+    def test_second_run_leaves_index_unchanged(self):
+        self.write_index()
+        self.run_build()
+        del self.logs[:]
+        self.run_build()
+        self.assertIn("unchanged index.html", self.logs)
+
+    def test_new_episode_moves_the_link(self):
+        self.write_index()
+        self.run_build()
+        newer = copy.deepcopy(self.fixture)
+        ep14 = copy.deepcopy(newer["data"][0])
+        ep14.update(name="Distortion Cellar - Ep 14 - New One - 2026/10/11",
+                    key="/distortioncellar/ep-14/",
+                    url="https://www.mixcloud.com/distortioncellar/ep-14/",
+                    created_time="2026-10-12T02:00:00Z")
+        newer["data"].insert(0, ep14)
+        self.run_build(fetch_json=lambda url: newer)
+        self.assertIn("https://www.mixcloud.com/distortioncellar/ep-14/", self.index())
+
+    def test_dry_run_does_not_touch_index(self):
+        self.write_index()
+        self.run_build(dry_run=True)
+        self.assertEqual(self.index(), INDEX_HTML)
+        self.assertIn("updated index.html", self.logs)
+
+    def test_offline_uses_saved_episodes(self):
+        self.write_index()
+        self.run_build()
+        self.write_index()  # put the stale link back
+
+        def down(url):
+            raise urllib.error.URLError("boom")
+        self.run_build(fetch_json=down)
+        self.assertIn(self.fixture["data"][0]["url"], self.index())
+
+    def test_missing_button_warns_and_leaves_index_alone(self):
+        page = INDEX_HTML.replace("Latest Episode", "Something Else")
+        self.write_index(page)
+        self.run_build()
+        self.assertEqual(self.index(), page)
+        self.assertTrue(any(l.startswith("WARNING") and "Latest Episode" in l
+                            for l in self.logs))
+        self.assertTrue(os.path.exists(os.path.join(self.root, "episodes", "ep-13.html")))
+
+    def test_no_index_file_is_silently_skipped(self):
+        self.run_build()
+        self.assertFalse(os.path.exists(os.path.join(self.root, "index.html")))
+        self.assertFalse(any(l.startswith("WARNING") for l in self.logs))
+
+
 if __name__ == "__main__":
     unittest.main()
