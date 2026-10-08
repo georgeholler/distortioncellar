@@ -340,3 +340,86 @@ def render_list_page(episodes):
     ])
     return page_html("Previous Episodes", "Every Distortion Cellar episode.",
                      "Previous Episodes", body)
+
+
+# --- Build --------------------------------------------------------------------
+
+def stub_notes(number):
+    return ("<!-- Notes for episode %d. Delete this line and write your notes "
+            "in markdown. -->\n" % number)
+
+
+def write_file(root, rel, content, dry_run, log, only_if_missing=False):
+    """Write `content` to root/rel, logging created / updated / unchanged."""
+    path = os.path.join(root, *rel.split("/"))
+    existing = None
+    if os.path.exists(path):
+        with open(path, encoding="utf-8", newline="") as fh:
+            existing = fh.read()
+    if existing is not None and (only_if_missing or existing == content):
+        log("unchanged %s" % rel)
+        return
+    log("%s %s" % ("created" if existing is None else "updated", rel))
+    if dry_run:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        fh.write(content)
+
+
+def read_notes(root, number):
+    path = os.path.join(root, "episodes", "notes", "ep-%d.md" % number)
+    if not os.path.exists(path):
+        return stub_notes(number)
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+def build(root, user=DEFAULT_USER, fetch_json=default_fetch_json,
+          dry_run=False, log=print):
+    data_rel = "episodes/data.json"
+    data = load_data(os.path.join(root, "episodes", "data.json"))
+    try:
+        cloudcasts = fetch_cloudcasts(user, fetch_json)
+    except OSError as exc:  # URLError, HTTPError and timeouts all land here
+        if not data["episodes"]:
+            raise SystemExit(
+                "Could not reach Mixcloud (%s) and there is no saved "
+                "episodes/data.json to build from." % exc)
+        log("WARNING: could not reach Mixcloud (%s); building from the saved "
+            "episodes/data.json" % exc)
+    else:
+        data = merge_episodes(data, cloudcasts)
+
+    episodes = sorted(data["episodes"].values(), key=lambda e: e["number"])
+    write_file(root, data_rel, dump_data(data), dry_run, log)
+    for index, episode in enumerate(episodes):
+        number = episode["number"]
+        write_file(root, "episodes/notes/ep-%d.md" % number, stub_notes(number),
+                   dry_run, log, only_if_missing=True)
+        prev_episode = episodes[index - 1] if index > 0 else None
+        next_episode = episodes[index + 1] if index + 1 < len(episodes) else None
+        page = render_episode_page(
+            episode, render_markdown(read_notes(root, number)),
+            prev_episode, next_episode)
+        write_file(root, "episodes/" + episode_filename(number), page, dry_run, log)
+    write_file(root, "previous-episodes.html", render_list_page(episodes),
+               dry_run, log)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--user", default=DEFAULT_USER, help="Mixcloud username")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="report what would change without writing files")
+    args = parser.parse_args(argv)
+    try:
+        build(ROOT, user=args.user, dry_run=args.dry_run)
+    except ValueError as exc:
+        raise SystemExit("Error: %s" % exc)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
