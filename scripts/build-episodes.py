@@ -285,7 +285,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <body>
 
   <header class="site-header">
-    <h1 class="brand">Distortion Cellar</h1>
+    <h1 class="brand"><a href="%(root)sindex.html">Distortion Cellar</a></h1>
     <p class="tagline">%(tagline)s</p>
   </header>
 

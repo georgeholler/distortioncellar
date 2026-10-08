@@ -83,5 +83,17 @@ class ListPage(unittest.TestCase):
         self.assertIn("All Episodes", be.render_list_page([]))
 
 
+class BrandLink(unittest.TestCase):
+    def test_site_title_links_home_from_the_episode_page(self):
+        page = be.render_episode_page(make_ep(13), "")
+        self.assertIn('<h1 class="brand"><a href="../index.html">'
+                      "Distortion Cellar</a></h1>", page)
+
+    def test_site_title_links_home_from_the_list_page(self):
+        page = be.render_list_page([make_ep(13)])
+        self.assertIn('<h1 class="brand"><a href="index.html">'
+                      "Distortion Cellar</a></h1>", page)
+
+
 if __name__ == "__main__":
     unittest.main()
